@@ -1,13 +1,17 @@
+"use client"
+
+import { useState, useMemo } from "react"
 import { BookCard } from "@/components/BookCard"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { BookOpen, Plus, Mic, Sparkles, ArrowRight, Upload } from "lucide-react"
 import Link from "next/link"
 import { Show } from "@clerk/nextjs"
+import { SearchBox } from "@/components/SearchBox"
 
 /* ── Mock data (replace with DB fetch) ─────────────────── */
 const MOCK_BOOKS = [
-  { id: "1", title: "Atomic Habits", author: "James Clear", sessions: 4, lastRead: "2d ago" },
+  { id: "1", title: "Atomic Habits", author: "James Clear", sessions: 4, lastRead: "2d ago", coverImage: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=600&auto=format&fit=crop" },
   { id: "2", title: "The Great Gatsby", author: "F. Scott Fitzgerald", sessions: 1, lastRead: "1w ago" },
   { id: "3", title: "Thinking, Fast and Slow", author: "Daniel Kahneman", sessions: 7, lastRead: "3d ago" },
   { id: "4", title: "Sapiens: A Brief History of Humankind", author: "Yuval Noah Harari", sessions: 2, lastRead: "5d ago" },
@@ -196,23 +200,31 @@ function LandingHero() {
    LIBRARY PAGE (authenticated)
 ═══════════════════════════════════════════════════════════ */
 function LibraryPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const filteredBooks = useMemo(() => {
+    return MOCK_BOOKS.filter(book => 
+      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  }, [searchQuery])
+
   return (
     <div className="min-h-screen px-4 py-10">
       <div className="max-w-6xl mx-auto">
+        
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
             <h1 className="text-3xl font-bold">My Library</h1>
             <p className="text-muted-foreground mt-1">
               {MOCK_BOOKS.length} book{MOCK_BOOKS.length !== 1 ? "s" : ""} · click any to start talking
             </p>
           </div>
-          <Link href="/books/new" id="library-add-btn">
-            <Button className="gap-2 bg-amber-500 hover:bg-amber-600 text-white border-0">
-              <Plus className="h-4 w-4" />
-              Add Book
-            </Button>
-          </Link>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-3 flex-1 max-w-md md:justify-end">
+            <SearchBox onSearch={setSearchQuery} className="w-full" />
+          </div>
         </div>
 
         {MOCK_BOOKS.length === 0 ? (
@@ -233,24 +245,24 @@ function LibraryPage() {
           </div>
         ) : (
           /* Book grid */
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {/* Add new card */}
-            <Link
-              href="/books/new"
-              id="library-add-card"
-              className="group flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border hover:border-amber-500/50 bg-card hover:bg-amber-500/5 p-6 h-full min-h-[240px] transition-all duration-300"
-            >
-              <div className="h-12 w-12 rounded-xl border-2 border-dashed border-amber-500/30 group-hover:border-amber-500 flex items-center justify-center transition-colors">
-                <Plus className="h-5 w-5 text-amber-500/50 group-hover:text-amber-500 transition-colors" />
-              </div>
-              <span className="text-xs text-muted-foreground group-hover:text-amber-500 transition-colors font-medium">
-                Add Book
-              </span>
-            </Link>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-start">
 
-            {MOCK_BOOKS.map((book) => (
-              <BookCard key={book.id} {...book} />
-            ))}
+            {filteredBooks.length > 0 ? (
+              filteredBooks.map((book) => (
+                <BookCard key={book.id} {...book} />
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center">
+                <p className="text-muted-foreground text-lg">No books found matching "{searchQuery}"</p>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSearchQuery("")}
+                  className="mt-2 text-amber-500 hover:text-amber-600 hover:bg-amber-500/5"
+                >
+                  Clear search
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
